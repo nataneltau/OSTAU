@@ -37,8 +37,10 @@ int process_arglist(int count, char **arglist){
     int tag = tagCommands(count, arglist); 
     int pid ,status;
 
+
+
     if(tag == 1){//we are in case: executing commands , section 1.2.1
-        pid = fork();
+        //pid = fork();
 
         if(pid == 0){// we are a child
             execvp(*arglist[0], *arglist);
@@ -50,15 +52,15 @@ int process_arglist(int count, char **arglist){
 
     }//end of if(tag == 1)
 
-    else if(tag == 2){ //we are in case: executing commands in the background , section 1.2.2 
+    else if(tag == 2 && pid == 0){ //we are in case: executing commands in the background , section 1.2.2 && the parent shouldn't get inside this block
         
         *arglist[count-1] = NULL;//remove & from arglist
         
-        pid = fork();
+        //pid = fork();
 
-        if(pid == 0){// we are a child
-            execvp(*arglist[0], *arglist);
-        }
+        // we are a child
+        execvp(*arglist[0], *arglist);
+        
 
 
     }//end of if(tag == 2)
