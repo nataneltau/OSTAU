@@ -12,7 +12,8 @@
 
 /* Credits:
  * https://www.youtube.com/watch?v=PIb2aShU_H4 - help understand dup2() function
- * https://www.youtube.com/watch?v=Z2THA6jX3j8 - help with SIGCHLD
+ * https://www.youtube.com/watch?v=Z2THA6jX3j8 - help with SIGCHLD (in hebrew)
+ * https://stackoverflow.com/questions/7171722/how-can-i-handle-sigchld - help prevent zombies
 */
 
 
