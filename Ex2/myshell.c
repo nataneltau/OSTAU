@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 
 
 
@@ -24,12 +25,6 @@
 */
 int tagCommands(int count, char **arglist);
 
-void freeChild(int signum){
-
-
-
-}//end of function mySignalHandler
-
 int prepare(void){
 
     signal(SIGINT, SIG_IGN);//you shall not pass!
@@ -38,6 +33,8 @@ int prepare(void){
 
 
 int finalize(void){
+
+    signal(SIGINT, SIG_DFL);//you shall pass now :)
     return 0;
 }//end of function finalize
 
@@ -54,7 +51,7 @@ int process_arglist(int count, char **arglist){
         if(pid == 0){// we are a child
             signal(SIGINT, SIG_DFL);
             signal(SIGCHLD, SIG_DFL);
-            execvp(*arglist[0], *arglist);
+            execvp(arglist[0], arglist);
         }
         else{//we are parents
             waitpid(pid, &status, 0);
@@ -65,13 +62,13 @@ int process_arglist(int count, char **arglist){
 
     else if(tag == 2){ //we are in case: executing commands in the background , section 1.2.2 
         
-        *arglist[count-1] = NULL;//remove "&" from arglist
+        arglist[count-1] = NULL;//remove "&" from arglist
         
         pid = fork();
 
         if(pid == 0){// we are a child
             signal(SIGCHLD, SIG_DFL);
-            execvp(*arglist[0], *arglist);
+            execvp(arglist[0], arglist);
         }
     
 
@@ -82,7 +79,7 @@ int process_arglist(int count, char **arglist){
         int countOfPipe = 0;
         int pfds[2];
 
-        while (*agrlist[countOfPipe++] != "|");//sesrch for "|"
+        while (strcmp(arglist[countOfPipe++], "|") != 0);//sesrch for "|"
 
         countOfPipe--;//because the ++ in the while loop we need to go one back
 
@@ -102,7 +99,7 @@ int process_arglist(int count, char **arglist){
             close(pfds[0]);
             dup2(pfds[1], STDOUT_FILENO);
             close(pfds[1]);
-            execvp(*arglist[0], *arglist);
+            execvp(arglist[0], arglist);
 
         }
         else{//we are parent
@@ -116,7 +113,7 @@ int process_arglist(int count, char **arglist){
                 close(pfds[1]);
                 dup2(pfds[0], STDIN_FILENO);
                 close(pfds[0]);
-                execvp((*arglist+countOfPipe+1)[0], (*arglist+countOfPipe+1));//check if right in terms of syntax and pointers
+                execvp((arglist+countOfPipe+1)[0], (arglist+countOfPipe+1));//check if right in terms of syntax and pointers
             }
             else{//we are still parent
                 close(pfds[1]);
@@ -130,17 +127,17 @@ int process_arglist(int count, char **arglist){
 
     else{ // we are in case: output redirecting , section 1.2.4
         
-        *arglist[count-2] = NULL;//remove ">>" from arglist
+        arglist[count-2] = NULL;//remove ">>" from arglist
 
         pid = fork();
 
         if(pid == 0){// we are a child
-            int redirectOut = open(*arglist[count-1], O_CREAT | O_APPEND);//open the file
+            int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND);//open the file
             signal(SIGINT, SIG_DFL);
             signal(SIGCHLD, SIG_DFL);
             dup2(redirectOut, STDOUT_FILENO);//redirect so the output will be written to the file
             close(redirectOut);//close the file
-            execvp(*arglist[0], *arglist);
+            execvp(arglist[0], arglist);
         }
         else{//we are parents
             waitpid(pid, &status, 0);
@@ -167,15 +164,15 @@ int tagCommands(int count, char **arglist){
     char temp;
 
     while(index>0){
-        temp = *arglist[index--];
+        temp = arglist[index--];
 
-        if(temp == "&"){
+        if(strcmp(temp, "&")){
             return 2;
         }
-        else if(temp == "|"){
+        else if(strcmp(temp, "|")){
             return 3;
         }
-        else if(temp == ">>"){
+        else if(strcmp(temp, ">>")){
             return 4;
         }
 
