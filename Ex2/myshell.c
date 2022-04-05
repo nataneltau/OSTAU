@@ -42,19 +42,42 @@ int process_arglist(int count, char **arglist){
 
     int tag = tagCommands(count, arglist); 
     int pid ,status;
-    signal(SIGINT, SIG_IGN);//you shall not pass! also work for background processes
-    signa(SIGCHLD, SIG_IGN);//prevent zombies 
+    if(signal(SIGINT, SIG_IGN) == SIG_ERR){//you shall not pass! also work for background processes
+        fprintf( stderr, strerror(errno));
+        exit(1);
+    }
+
+    if(signa(SIGCHLD, SIG_IGN) == SIG_ERR){//prevent zombies 
+        fprintf( stderr, strerror(errno));
+        exit(1);
+    }
+
 
     if(tag == 1){//we are in case: executing commands , section 1.2.1
         pid = fork();
 
         if(pid == 0){// we are a child
-            signal(SIGINT, SIG_DFL);
-            signal(SIGCHLD, SIG_DFL);
-            execvp(arglist[0], arglist);
+            if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(execvp(arglist[0], arglist) == -1){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
         }
         else{//we are parents
-            waitpid(pid, &status, 0);
+            if(waitpid(pid, &status, 0) < 0){
+                if(!(errno == ECHILD || errno == EINTR)){
+                    fprintf( stderr, strerror(errno));
+                    exit(1);
+                }//end of inner if
+
+            }//end of if
         }
         
 
@@ -67,8 +90,14 @@ int process_arglist(int count, char **arglist){
         pid = fork();
 
         if(pid == 0){// we are a child
-            signal(SIGCHLD, SIG_DFL);
-            execvp(arglist[0], arglist);
+            if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(execvp(arglist[0], arglist) == -1){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
         }
     
 
@@ -94,34 +123,65 @@ int process_arglist(int count, char **arglist){
         pid = fork();
 
         if(pid == 0){//first child
-            signal(SIGINT, SIG_DFL);
-            signal(SIGCHLD, SIG_DFL);
+            if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
             close(pfds[0]);
             dup2(pfds[1], STDOUT_FILENO);
             close(pfds[1]);
-            execvp(arglist[0], arglist);
+            if(execvp(arglist[0], arglist) == -1){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
 
         }
         else{//we are parent
 
-            //add?:                 waitpid(pid, &status, 0);
             anotherPid = fork();
 
             if(anotherPid == 0){//second child
-                signal(SIGINT, SIG_DFL);
-                signal(SIGCHLD, SIG_DFL);
+                if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+                    fprintf( stderr, strerror(errno));
+                       exit(1);
+                }
+                if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
+                    fprintf( stderr, strerror(errno));
+                    exit(1);
+                }
                 close(pfds[1]);
                 dup2(pfds[0], STDIN_FILENO);
                 close(pfds[0]);
-                execvp((arglist+countOfPipe+1)[0], (arglist+countOfPipe+1));//check if right in terms of syntax and pointers
+                if(execvp((arglist+countOfPipe+1)[0], (arglist+countOfPipe+1)) == -1){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+                }
+                
             }
             else{//we are still parent
                 close(pfds[1]);
                 close(pfds[0]);
-                waitpid(pid, &status, 0);
-                waitpid(anotherPid, &status, 0);
+                if(waitpid(pid, &status, 0) < 0){
+                    if(!(errno == ECHILD || errno == EINTR)){
+                      fprintf( stderr, strerror(errno));
+                      exit(1);
+                    }//end of inner if
+
+                }//end of if(waitpid(pid))
+
+                if(waitpid(anotherPid, &status, 0) < 0){
+                    if(!(errno == ECHILD || errno == EINTR)){
+                        fprintf( stderr, strerror(errno));
+                        exit(1);
+                    }//end of inner if
+
+                }//end of if(waitpid(anotherPid))
             }
-        }
+        }//end of else
 
     }//end of if(tag == 3)
 
@@ -133,27 +193,38 @@ int process_arglist(int count, char **arglist){
 
         if(pid == 0){// we are a child
             int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND);//open the file
-            signal(SIGINT, SIG_DFL);
-            signal(SIGCHLD, SIG_DFL);
+            if(redirectOut == -1){//error in open file
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
+            if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
             dup2(redirectOut, STDOUT_FILENO);//redirect so the output will be written to the file
             close(redirectOut);//close the file
-            execvp(arglist[0], arglist);
+            if(execvp(arglist[0], arglist) == -1){
+                fprintf( stderr, strerror(errno));
+                exit(1);
+            }
         }
         else{//we are parents
-            waitpid(pid, &status, 0);
+            if(waitpid(pid, &status, 0) < 0){
+                if(!(errno == ECHILD || errno == EINTR)){
+                    fprintf( stderr, strerror(errno));
+                    exit(1);
+                }//end of inner if
+
+            }//end of if
         }
 
     }//end of else which is equal to if(tag==4)
 
-    
-
-    //modify based on the answer in the forum
-    //maybe need to do only for process that not in the background, in that case should do waitpid in the if else block
-    //while(-1 != wait(&status));
-
-    return 1;
-
-    
+    return 1; 
 
 }//end of function process_arglist
 
