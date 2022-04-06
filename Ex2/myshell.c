@@ -7,8 +7,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
-#include <string.h>
+
 
 
 
@@ -251,7 +250,7 @@ int process_arglist(int count, char **arglist){
 
 int tagCommands(int count, char **arglist){
 
-    int index = count;
+    int index = count-1;
     char *temp;
 
     while(index>0){
