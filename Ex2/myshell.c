@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -43,12 +44,12 @@ int process_arglist(int count, char **arglist){
     int tag = tagCommands(count, arglist); 
     int pid ,status;
     if(signal(SIGINT, SIG_IGN) == SIG_ERR){//you shall not pass! also work for background processes
-        fprintf( stderr, strerror(errno));
+        fprintf( stderr, "%s", strerror(errno));
         exit(1);
     }
 
-    if(signa(SIGCHLD, SIG_IGN) == SIG_ERR){//prevent zombies 
-        fprintf( stderr, strerror(errno));
+    if(signal(SIGCHLD, SIG_IGN) == SIG_ERR){//prevent zombies 
+        fprintf( stderr, "%s", strerror(errno));
         exit(1);
     }
 
@@ -58,22 +59,22 @@ int process_arglist(int count, char **arglist){
 
         if(pid == 0){// we are a child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
         }
         else{//we are parents
             if(waitpid(pid, &status, 0) < 0){
                 if(!(errno == ECHILD || errno == EINTR)){
-                    fprintf( stderr, strerror(errno));
+                    fprintf( stderr, "%s", strerror(errno));
                     exit(1);
                 }//end of inner if
 
@@ -91,11 +92,11 @@ int process_arglist(int count, char **arglist){
 
         if(pid == 0){// we are a child
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
         }
@@ -124,18 +125,18 @@ int process_arglist(int count, char **arglist){
 
         if(pid == 0){//first child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             close(pfds[0]);
             dup2(pfds[1], STDOUT_FILENO);
             close(pfds[1]);
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
 
@@ -146,18 +147,18 @@ int process_arglist(int count, char **arglist){
 
             if(anotherPid == 0){//second child
                 if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                    fprintf( stderr, strerror(errno));
+                    fprintf( stderr, "%s", strerror(errno));
                        exit(1);
                 }
                 if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                    fprintf( stderr, strerror(errno));
+                    fprintf( stderr, "%s", strerror(errno));
                     exit(1);
                 }
                 close(pfds[1]);
                 dup2(pfds[0], STDIN_FILENO);
                 close(pfds[0]);
                 if(execvp((arglist+countOfPipe+1)[0], (arglist+countOfPipe+1)) == -1){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
                 }
                 
@@ -167,7 +168,7 @@ int process_arglist(int count, char **arglist){
                 close(pfds[0]);
                 if(waitpid(pid, &status, 0) < 0){
                     if(!(errno == ECHILD || errno == EINTR)){
-                      fprintf( stderr, strerror(errno));
+                      fprintf( stderr, "%s", strerror(errno));
                       exit(1);
                     }//end of inner if
 
@@ -175,7 +176,7 @@ int process_arglist(int count, char **arglist){
 
                 if(waitpid(anotherPid, &status, 0) < 0){
                     if(!(errno == ECHILD || errno == EINTR)){
-                        fprintf( stderr, strerror(errno));
+                        fprintf( stderr, "%s", strerror(errno));
                         exit(1);
                     }//end of inner if
 
@@ -194,28 +195,28 @@ int process_arglist(int count, char **arglist){
         if(pid == 0){// we are a child
             int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND);//open the file
             if(redirectOut == -1){//error in open file
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
             dup2(redirectOut, STDOUT_FILENO);//redirect so the output will be written to the file
             close(redirectOut);//close the file
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, strerror(errno));
+                fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }
         }
         else{//we are parents
             if(waitpid(pid, &status, 0) < 0){
                 if(!(errno == ECHILD || errno == EINTR)){
-                    fprintf( stderr, strerror(errno));
+                    fprintf( stderr, "%s", strerror(errno));
                     exit(1);
                 }//end of inner if
 
@@ -232,7 +233,7 @@ int process_arglist(int count, char **arglist){
 int tagCommands(int count, char **arglist){
 
     int index = count;
-    char temp;
+    char *temp;
 
     while(index>0){
         temp = arglist[index--];
