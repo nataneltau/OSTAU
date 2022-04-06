@@ -55,7 +55,7 @@ int process_arglist(int count, char **arglist){
 
 
     if(tag == 1){//we are in case: executing commands , section 1.2.1
-        if(pid = fork() < 0){
+        if((pid = fork()) < 0){
             fprintf( stderr, "%s", strerror(errno));
             exit(1);
         }
@@ -91,7 +91,7 @@ int process_arglist(int count, char **arglist){
         
         arglist[count-1] = NULL;//remove "&" from arglist
         
-        if(pid = fork() < 0){
+        if((pid = fork()) < 0){
             fprintf( stderr, "%s", strerror(errno));
             exit(1);
         }
@@ -130,7 +130,7 @@ int process_arglist(int count, char **arglist){
             exit(1);
         }
 
-        if(pid = fork() < 0){
+        if((pid = fork()) < 0){
             fprintf( stderr, "%s", strerror(errno));
             exit(1);
         }
@@ -155,7 +155,7 @@ int process_arglist(int count, char **arglist){
         }
         else{//we are parent
 
-            if(anotherPid = fork() < 0){
+            if((anotherPid = fork()) < 0){
                 fprintf( stderr, "%s", strerror(errno));
                 exit(1);
             }   
@@ -205,7 +205,7 @@ int process_arglist(int count, char **arglist){
         
         arglist[count-2] = NULL;//remove ">>" from arglist
 
-        if(pid = fork() < 0){
+        if((pid = fork()) < 0){
             fprintf( stderr, "%s", strerror(errno));
             exit(1);
         }
@@ -244,6 +244,7 @@ int process_arglist(int count, char **arglist){
     }//end of else which is equal to if(tag==4)
 
     return 1; 
+
 
 }//end of function process_arglist
 
