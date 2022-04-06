@@ -55,7 +55,10 @@ int process_arglist(int count, char **arglist){
 
 
     if(tag == 1){//we are in case: executing commands , section 1.2.1
-        pid = fork();
+        if(pid = fork() < 0){
+            fprintf( stderr, "%s", strerror(errno));
+            exit(1);
+        }
 
         if(pid == 0){// we are a child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
@@ -88,7 +91,10 @@ int process_arglist(int count, char **arglist){
         
         arglist[count-1] = NULL;//remove "&" from arglist
         
-        pid = fork();
+        if(pid = fork() < 0){
+            fprintf( stderr, "%s", strerror(errno));
+            exit(1);
+        }
 
         if(pid == 0){// we are a child
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
@@ -119,9 +125,15 @@ int process_arglist(int count, char **arglist){
 
         int anotherPid;
 
-        pipe(pfds);
+        if(pipe(pfds) < 0){
+            fprintf( stderr, "%s", strerror(errno));
+            exit(1);
+        }
 
-        pid = fork();
+        if(pid = fork() < 0){
+            fprintf( stderr, "%s", strerror(errno));
+            exit(1);
+        }
 
         if(pid == 0){//first child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
@@ -143,7 +155,10 @@ int process_arglist(int count, char **arglist){
         }
         else{//we are parent
 
-            anotherPid = fork();
+            if(anotherPid = fork() < 0){
+                fprintf( stderr, "%s", strerror(errno));
+                exit(1);
+            }   
 
             if(anotherPid == 0){//second child
                 if(signal(SIGINT, SIG_DFL) == SIG_ERR){
@@ -190,10 +205,13 @@ int process_arglist(int count, char **arglist){
         
         arglist[count-2] = NULL;//remove ">>" from arglist
 
-        pid = fork();
+        if(pid = fork() < 0){
+            fprintf( stderr, "%s", strerror(errno));
+            exit(1);
+        }
 
         if(pid == 0){// we are a child
-            int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND);//open the file
+            int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND, 0644);//open the file
             if(redirectOut == -1){//error in open file
                 fprintf( stderr, "%s", strerror(errno));
                 exit(1);
