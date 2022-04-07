@@ -43,40 +43,40 @@ int process_arglist(int count, char **arglist){
     int tag = tagCommands(count, arglist); 
     int pid ,status;
     if(signal(SIGINT, SIG_IGN) == SIG_ERR){//you shall not pass! also work for background processes
-        fprintf( stderr, "%s", strerror(errno));
+        fprintf( stderr, "%s\n", strerror(errno));
         exit(1);
     }
 
     if(signal(SIGCHLD, SIG_IGN) == SIG_ERR){//prevent zombies 
-        fprintf( stderr, "%s", strerror(errno));
+        fprintf( stderr, "%s\n", strerror(errno));
         exit(1);
     }
 
 
     if(tag == 1){//we are in case: executing commands , section 1.2.1
         if((pid = fork()) < 0){
-            fprintf( stderr, "%s", strerror(errno));
+            fprintf( stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
         if(pid == 0){// we are a child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
         }
         else{//we are parents
             if(waitpid(pid, &status, 0) < 0){
                 if(!(errno == ECHILD || errno == EINTR)){
-                    fprintf( stderr, "%s", strerror(errno));
+                    fprintf( stderr, "%s\n", strerror(errno));
                     exit(1);
                 }//end of inner if
 
@@ -91,17 +91,17 @@ int process_arglist(int count, char **arglist){
         arglist[count-1] = NULL;//remove "&" from arglist
         
         if((pid = fork()) < 0){
-            fprintf( stderr, "%s", strerror(errno));
+            fprintf( stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
         if(pid == 0){// we are a child
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
         }
@@ -125,29 +125,29 @@ int process_arglist(int count, char **arglist){
         int anotherPid;
 
         if(pipe(pfds) < 0){
-            fprintf( stderr, "%s", strerror(errno));
+            fprintf( stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
         if((pid = fork()) < 0){
-            fprintf( stderr, "%s", strerror(errno));
+            fprintf( stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
         if(pid == 0){//first child
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             close(pfds[0]);
             dup2(pfds[1], STDOUT_FILENO);
             close(pfds[1]);
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
 
@@ -155,24 +155,24 @@ int process_arglist(int count, char **arglist){
         else{//we are parent
 
             if((anotherPid = fork()) < 0){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }   
 
             if(anotherPid == 0){//second child
                 if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                    fprintf( stderr, "%s", strerror(errno));
+                    fprintf( stderr, "%s\n", strerror(errno));
                        exit(1);
                 }
                 if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                    fprintf( stderr, "%s", strerror(errno));
+                    fprintf( stderr, "%s\n", strerror(errno));
                     exit(1);
                 }
                 close(pfds[1]);
                 dup2(pfds[0], STDIN_FILENO);
                 close(pfds[0]);
                 if(execvp((arglist+countOfPipe+1)[0], (arglist+countOfPipe+1)) == -1){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
                 }
                 
@@ -182,7 +182,7 @@ int process_arglist(int count, char **arglist){
                 close(pfds[0]);
                 if(waitpid(pid, &status, 0) < 0){
                     if(!(errno == ECHILD || errno == EINTR)){
-                      fprintf( stderr, "%s", strerror(errno));
+                      fprintf( stderr, "%s\n", strerror(errno));
                       exit(1);
                     }//end of inner if
 
@@ -190,7 +190,7 @@ int process_arglist(int count, char **arglist){
 
                 if(waitpid(anotherPid, &status, 0) < 0){
                     if(!(errno == ECHILD || errno == EINTR)){
-                        fprintf( stderr, "%s", strerror(errno));
+                        fprintf( stderr, "%s\n", strerror(errno));
                         exit(1);
                     }//end of inner if
 
@@ -205,35 +205,39 @@ int process_arglist(int count, char **arglist){
         arglist[count-2] = NULL;//remove ">>" from arglist
 
         if((pid = fork()) < 0){
-            fprintf( stderr, "%s", strerror(errno));
+            fprintf( stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
         if(pid == 0){// we are a child
-            int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND, 0644);//open the file
+            int redirectOut = open(arglist[count-1], O_CREAT | O_APPEND | O_WRONLY, 0644);//open the file
+
             if(redirectOut == -1){//error in open file
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(signal(SIGINT, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
             if(signal(SIGCHLD, SIG_DFL) == SIG_ERR){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
+
             dup2(redirectOut, STDOUT_FILENO);//redirect so the output will be written to the file
+
             close(redirectOut);//close the file
+
             if(execvp(arglist[0], arglist) == -1){
-                fprintf( stderr, "%s", strerror(errno));
+                fprintf( stderr, "%s\n", strerror(errno));
                 exit(1);
             }
         }
         else{//we are parents
             if(waitpid(pid, &status, 0) < 0){
                 if(!(errno == ECHILD || errno == EINTR)){
-                    fprintf( stderr, "%s", strerror(errno));
+                    fprintf( stderr, "%s\n", strerror(errno));
                     exit(1);
                 }//end of inner if
 
@@ -256,13 +260,13 @@ int tagCommands(int count, char **arglist){
     while(index>0){
         temp = arglist[index--];
 
-        if(strcmp(temp, "&")){
+        if(!(strcmp(temp, "&"))){
             return 2;
         }
-        else if(strcmp(temp, "|")){
+        else if(!(strcmp(temp, "|"))){
             return 3;
         }
-        else if(strcmp(temp, ">>")){
+        else if(!(strcmp(temp, ">>"))){
             return 4;
         }
 
